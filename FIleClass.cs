@@ -36,14 +36,15 @@ namespace Crypto
                 int iter = (int)fi.Length / size;
                 byte[] encryptedbuffer = new byte[size];
                 byte[] buffer = new byte[size];
-                byte[] hashbuffer = new byte[256];
+                byte[] hashbuffer = new byte[20];
                 byte[] hashbuffer1 = new byte[256];
                 ford.Write(hashbuffer);
+                HashAlgorithm hash = SHA1.Create();
                 for (int i = 0; i <= iter; i++)
                 {
                     buffer = fird.ReadBytes(size);
-                    hashbuffer1 =  rsa.SignData(buffer, SHA1.Create());
-                    for(int j = 0; j < 256; ++j)
+                    hashbuffer1 =  hash.ComputeHash(buffer);
+                    for(int j = 0; j < 20; ++j)
                     {
                         hashbuffer[j] = (byte)(hashbuffer[j] ^ hashbuffer1[j]);
                     }
@@ -67,29 +68,30 @@ namespace Crypto
             var rsa = new RSACryptoServiceProvider();
             try
             {
+                HashAlgorithm hash = SHA1.Create();
                 rsa.ImportRSAPrivateKey(privateKey, out keysize);
-               // rsa.ImportRSAPublicKey(publicKey, out keysize);
+               
                 int size = rsa.KeySize / 8;
                 byte[] decryptedbuffer = new byte[size];
                 byte[] buffer = new byte[size];
                 byte[] hashbuffer1 = new byte[256];
                 byte[] hashbuffer = new byte[256];
                 byte[] hashbuffer2;
-                hashbuffer2 = fird.ReadBytes(256);
-                int iter = ((int)fi.Length-256) / size;
+                hashbuffer2 = fird.ReadBytes(20);
+                int iter = ((int)fi.Length-20) / size;
                 for (int i = 0; i < iter; i++)
                 {
                     buffer = fird.ReadBytes(size);
                     decryptedbuffer = rsa.Decrypt(buffer, false);
-                    hashbuffer1 = rsa.SignData(decryptedbuffer, SHA1.Create());
-                    for (int j = 0; j < 256; ++j)
+                    hashbuffer1 = hash.ComputeHash(decryptedbuffer);
+                    for (int j = 0; j < 20; ++j)
                     {
                         hashbuffer[j] = (byte)(hashbuffer[j] ^ hashbuffer1[j]);
                     }
                     ford.Write(decryptedbuffer);
                 }
                 bool f = true;
-                for (int i = 0; i < 256; ++i)
+                for (int i = 0; i < 20; ++i)
                 {
                     if (hashbuffer[i] != hashbuffer2[i])
                     {
